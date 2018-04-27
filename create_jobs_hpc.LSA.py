@@ -41,7 +41,7 @@ JobParams = {
 		'body': ["""export PYRO_SERIALIZERS_ACCEPTED=serpent,json,marshal,pickle""","""export PYRO_SERIALIZER=pickle""","""python -m Pyro4.naming -n 0.0.0.0 > PROJECT_HOME/Logs/nameserver.log 2>&1 &""","""P1=$!""","""python -m gensim.models.lsi_worker > PROJECT_HOME/Logs/worker1.log 2>&1 &""","""P2=$!""","""python -m gensim.models.lsi_worker > PROJECT_HOME/Logs/worker2.log 2>&1 &""","""P3=$!""","""python -m gensim.models.lsi_worker > PROJECT_HOME/Logs/worker3.log 2>&1 &""","""P4=$!""","""python -m gensim.models.lsi_worker > PROJECT_HOME/Logs/worker4.log 2>&1 &""","""P5=$!""","""python -m gensim.models.lsi_worker > PROJECT_HOME/Logs/worker5.log 2>&1 &""","""P6=$!""","""python -m gensim.models.lsi_dispatcher 5 > PROJECT_HOME/Logs/dispatcher.log 2>&1 &""","""P7=$!""","""python LSA/kmer_lsi.py -i PROJECT_HOME/hashed_reads/ -o PROJECT_HOME/cluster_vectors/""","""kill $P1 $P2 $P3 $P4 $P5 $P6 $P7"""]},
 	'KmerClusterIndex': {
 		'outfile': """KmerClusterIndex_Job.sge""",
-		'header': ["""#$ -N KmerClusterIndex""","""#$ -o PROJECT_HOME/Logs/KmerClusterIndex-Out.out""","""#$ -e PROJECT_HOME/Logs/KmerClusterIndex-Err.err""","""#$ -q pub8i""","""## -R 'rusage[mem=1]'""","""## -M 35"""],
+		'header': ["""#$ -N KmerClusterIndex""","""#$ -o PROJECT_HOME/Logs/KmerClusterIndex-Out.out""","""#$ -e PROJECT_HOME/Logs/KmerClusterIndex-Err.err""","""#$ -q pub8i""","""#$ -m beas""","""## -R 'rusage[mem=1]'""","""## -M 35"""],
 		# adjust cluster thresh (-t) as necessary
 		'body': ["""python LSA/kmer_cluster_index.py -i PROJECT_HOME/hashed_reads/ -o PROJECT_HOME/cluster_vectors/ -t 0.7""","""python LSFScripts/create_jobs.py -j KmerClusterParts -i ./""","""X=`sed -n 1p hashed_reads/hashParts.txt`""","""sed -i 's/%parts%/$X/g' LSFScripts/KmerClusterParts_ArrayJob.sge""","""python LSFScripts/create_jobs.py -j LSFScripts/KmerClusterMerge -i ./""","""X=`sed -n 1p cluster_vectors/numClusters.txt`""","""sed -i 's/%clusters%/$X/g' LSFScripts/KmerClusterMerge_ArrayJob.sge"""]},
 	'KmerClusterParts': {
@@ -61,13 +61,13 @@ JobParams = {
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python LSA/kmer_cluster_merge.py -r ${SGE_TASK_ID} -i PROJECT_HOME/cluster_vectors/ -o PROJECT_HOME/cluster_vectors/"""]},
 	'KmerClusterCols': {
 		'outfile': """KmerClusterCols_Job.sge""",
-		'header': ["""#$ -N KmerClusterCols""","""#$ -o PROJECT_HOME/Logs/KmerClusterCols-Out.out""","""#$ -e PROJECT_HOME/Logs/KmerClusterCols-Err.err""","""#$ -q pub8i""","""## -W 71:58""","""## -R 'rusage[mem=40]'""","""## -M 70"""],
+		'header': ["""#$ -N KmerClusterCols""","""#$ -o PROJECT_HOME/Logs/KmerClusterCols-Out.out""","""#$ -e PROJECT_HOME/Logs/KmerClusterCols-Err.err""","""#$ -q pub8i""","""#$ -m beas""","""## -W 71:58""","""## -R 'rusage[mem=40]'""","""## -M 70"""],
 		'body': ["""python LSA/kmer_cluster_cols.py -i PROJECT_HOME/hashed_reads/ -o PROJECT_HOME/cluster_vectors/"""]},
 	'ReadPartitions': {
 		'outfile': """ReadPartitions_ArrayJob.sge""",
 		'array': ["""hashed_reads/""","""*.hashq.*"""],
 		# MAKE SURE TO SET TMP FILE LOCATION
-		'header': ["""#$ -t 1-""","""#$ -N ReadPartitions""","""#$ -o PROJECT_HOME/Logs/ReadPartitions-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/ReadPartitions-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 45:10""","""## -R 'rusage[mem=3:argon_io=3]'""","""## -M 20"""],
+		'header': ["""#$ -t 1-""","""#$ -N ReadPartitions""","""#$ -o PROJECT_HOME/Logs/ReadPartitions-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/ReadPartitions-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""","""#$ -ckpt restart""","""## -W 45:10""","""## -R 'rusage[mem=3:argon_io=3]'""","""## -M 20"""],
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python LSA/write_partition_parts.py -r ${SGE_TASK_ID} -i PROJECT_HOME/hashed_reads/ -o PROJECT_HOME/cluster_vectors/ -t TMPDIR"""]},
 	'MergeIntermediatePartitions': {
 		'outfile': """MergeIntermediatePartitions_ArrayJob.sge""",
