@@ -13,18 +13,18 @@ JobParams = {
 	'HashReads': {
 		'outfile': """HashReads_ArrayJob.sge""",
 		'array': ["""original_reads/""","""*.fastq.*"""],
-		'header': ["""#$ -t 1-""","""#$ -N HashReads""","""#$ -o PROJECT_HOME/Logs/HashReads-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/HashReads-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 3:56""","""## -M 8"""],
+		'header': ["""#$ -t 1-""","""#$ -N HashReads""","""#$ -o PROJECT_HOME/Logs/HashReads-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/HashReads-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""","""#$ -ckpt restart""","""## -W 3:56""","""## -M 8"""],
 		# add -z option to omit reverse complimenting
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python LSA/hash_fastq_reads.py -r ${SGE_TASK_ID} -i PROJECT_HOME/original_reads/ -o PROJECT_HOME/hashed_reads/"""]},
 	'MergeHash': {
 		'outfile': """MergeHash_ArrayJob.sge""",
 		'array': ["""original_reads/""","""*.fastq""",5],
-		'header': ["""#$ -t 1-""","""#$ -N MergeHash""","""#$ -o PROJECT_HOME/Logs/MergeHash-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/MergeHash-Err-$TASK_ID.err""","""#$ -q pub8i""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 53:58""","""## -R 'rusage[mem=4]'""","""## -M 8"""],
+		'header': ["""#$ -t 1-""","""#$ -N MergeHash""","""#$ -o PROJECT_HOME/Logs/MergeHash-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/MergeHash-Err-$TASK_ID.err""","""#$ -q pub8i""","""#$ -m as""","""#$ -ckpt restart""","""## -W 53:58""","""## -R 'rusage[mem=4]'""","""## -M 8"""],
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python LSA/merge_hashq_files.py -r ${SGE_TASK_ID} -i PROJECT_HOME/hashed_reads/ -o PROJECT_HOME/hashed_reads/"""]},
 	'CombineFractions': {
 		'outfile': """CombineFractions_ArrayJob.sge""",
 		'array': ["""original_reads/""","""*.fastq""",1],
-		'header': ["""#$ -t 1-""","""#$ -N CombineFractions""","""#$ -o PROJECT_HOME/Logs/CombineFractions-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/CombineFractions-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 23:58""","""## -R 'rusage[mem=8]'""","""## -M 20"""],
+		'header': ["""#$ -t 1-""","""#$ -N CombineFractions""","""#$ -o PROJECT_HOME/Logs/CombineFractions-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/CombineFractions-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""","""#$ -ckpt restart""","""## -W 23:58""","""## -R 'rusage[mem=8]'""","""## -M 20"""],
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python LSA/merge_hashq_fractions.py -r ${SGE_TASK_ID} -i PROJECT_HOME/hashed_reads/ -o PROJECT_HOME/hashed_reads/"""]},
 	'GlobalWeights': {
 		'outfile': """GlobalWeights_Job.sge""",
@@ -33,7 +33,7 @@ JobParams = {
 	'KmerCorpus': {
 		'outfile': """KmerCorpus_ArrayJob.sge""",
 		'array': ["""hashed_reads/""","""*.count.hash"""],
-		'header': ["""#$ -t 1-""","""#$ -N KmerCorpus""","""#$ -o PROJECT_HOME/Logs/KmerCorpus-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/KmerCorpus-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 3:58""","""## -R 'rusage[mem=32]'""","""## -M 45"""],
+		'header': ["""#$ -t 1-""","""#$ -N KmerCorpus""","""#$ -o PROJECT_HOME/Logs/KmerCorpus-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/KmerCorpus-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""","""#$ -ckpt restart""","""## -W 3:58""","""## -R 'rusage[mem=32]'""","""## -M 45"""],
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python LSA/kmer_corpus.py -r ${SGE_TASK_ID} -i PROJECT_HOME/hashed_reads/ -o PROJECT_HOME/cluster_vectors/"""]},
 	'KmerLSI': {
 		'outfile': """KmerLSI_Job.sge""",
@@ -48,7 +48,7 @@ JobParams = {
 		'outfile': """KmerClusterParts_ArrayJob.sge""",
 		# number of tasks is 2**hash_size/10**6 + 1
 		#'array': ["""hashed_reads/""","""*.hashq.*"""],
-		'header': ["""#$ -t 1-%parts%""","""#$ -N KmerClusterParts%parts%]""","""#$ -o PROJECT_HOME/Logs/KmerClusterParts-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/KmerClusterParts-Err-$TASK_ID.err""","""#$ -q pub8i""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 3:59""","""## -R 'rusage[mem=1:argon_io=3]'""","""## -M 4"""],
+		'header': ["""#$ -t 1-%parts%""","""#$ -N KmerClusterParts%parts%]""","""#$ -o PROJECT_HOME/Logs/KmerClusterParts-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/KmerClusterParts-Err-$TASK_ID.err""","""#$ -q pub8i""","""#$ -m as""","""#$ -ckpt restart""","""## -W 3:59""","""## -R 'rusage[mem=1:argon_io=3]'""","""## -M 4"""],
 		###!!!
 		# adjust cluster thresh (-t) as necessary - probably same as Index step (maybe slightly higher)
 		###!!!
@@ -57,7 +57,7 @@ JobParams = {
 		'outfile': """KmerClusterMerge_ArrayJob.sge""",
 		# number of tasks is number of clusters
 		#'array': ["""hashed_reads/""","""*.hashq.*"""],
-		'header': ["""#$ -t 1-%clusters%""","""#$ -N KmerClusterMerge%clusters%]""","""#$ -o PROJECT_HOME/Logs/KmerClusterMerge-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/KmerClusterMerge-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 3:59""","""## -R 'rusage[mem=1]'""","""## -M 8"""],
+		'header': ["""#$ -t 1-%clusters%""","""#$ -N KmerClusterMerge%clusters%]""","""#$ -o PROJECT_HOME/Logs/KmerClusterMerge-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/KmerClusterMerge-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""","""#$ -ckpt restart""","""## -W 3:59""","""## -R 'rusage[mem=1]'""","""## -M 8"""],
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python LSA/kmer_cluster_merge.py -r ${SGE_TASK_ID} -i PROJECT_HOME/cluster_vectors/ -o PROJECT_HOME/cluster_vectors/"""]},
 	'KmerClusterCols': {
 		'outfile': """KmerClusterCols_Job.sge""",
@@ -72,23 +72,23 @@ JobParams = {
 	'MergeIntermediatePartitions': {
 		'outfile': """MergeIntermediatePartitions_ArrayJob.sge""",
 		'array': ["""cluster_vectors/""","""*.cluster.npy"""],
-		'header': ["""#$ -t 1-""","""#$ -N MergeIntermediatePartitions""","""#$ -o PROJECT_HOME/Logs/MergeIntermediatePartitions-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/MergeIntermediatePartitions-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 1:55""","""## -M 2""","""## -R 'rusage[argon_io=3]'"""],
+		'header': ["""#$ -t 1-""","""#$ -N MergeIntermediatePartitions""","""#$ -o PROJECT_HOME/Logs/MergeIntermediatePartitions-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/MergeIntermediatePartitions-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""","""#$ -ckpt restart""","""## -W 1:55""","""## -M 2""","""## -R 'rusage[argon_io=3]'"""],
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python LSA/merge_partition_parts.py -r ${SGE_TASK_ID} -i PROJECT_HOME/cluster_vectors/ -o PROJECT_HOME/read_partitions/"""]},
 	# Check to make sure there are no files remaining in cluster_vectors/PARTITION_NUM/
 	'SplitPairs': {
 		'outfile': """SplitPairs_ArrayJob.sge""",
 		'array': ["""cluster_vectors/""","""*.cluster.npy"""],
-		'header': ["""#$ -t 1-""","""#$ -N SplitPairs""","""#$ -o PROJECT_HOME/Logs/SplitPairs-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/SplitPairs-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 3:59""","""## -R 'rusage[argon_io=3]'""","""## -M 8"""],
+		'header': ["""#$ -t 1-""","""#$ -N SplitPairs""","""#$ -o PROJECT_HOME/Logs/SplitPairs-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/SplitPairs-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""","""#$ -ckpt restart""","""## -W 3:59""","""## -R 'rusage[argon_io=3]'""","""## -M 8"""],
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python LSA/split_read_pairs.py -r ${SGE_TASK_ID} -i PROJECT_HOME/read_partitions/ -o PROJECT_HOME/read_partitions/"""]},
 	'PhylerClassify': {
 		'outfile': """PhylerClassify_ArrayJob.sge""",
 		'array': ["""cluster_vectors/""","""*.cluster.npy"""],
-		'header': ["""#$ -t 1-""","""#$ -N PhylerClassify""","""#$ -o PROJECT_HOME/Logs/PhylerClassify-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/PhylerClassify-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 3:55""","""## -M 4""","""source /broad/software/scripts/useuse""","""reuse BLAST"""],
+		'header': ["""#$ -t 1-""","""#$ -N PhylerClassify""","""#$ -o PROJECT_HOME/Logs/PhylerClassify-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/PhylerClassify-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""","""#$ -ckpt restart""","""## -W 3:55""","""## -M 4""","""source /broad/software/scripts/useuse""","""reuse BLAST"""],
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python misc/phyler_classify.py -r ${SGE_TASK_ID} -i PROJECT_HOME/read_partitions/ -o PROJECT_HOME/phyler/"""]},
 	'PhylerIdentify': {
 		'outfile': """PhylerIdentify_ArrayJob.sge""",
 		'array': ["""cluster_vectors/""","""*.cluster.npy"""],
-		'header': ["""#$ -t 1-""","""#$ -N PhylerIdentify""","""#$ -o PROJECT_HOME/Logs/PhylerIdentify-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/PhylerIdentify-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""",""""#$ -ckpt restart""","""## -W 3:55""","""## -M 2"""],
+		'header': ["""#$ -t 1-""","""#$ -N PhylerIdentify""","""#$ -o PROJECT_HOME/Logs/PhylerIdentify-Out-$TASK_ID.out""","""#$ -e PROJECT_HOME/Logs/PhylerIdentify-Err-$TASK_ID.err""","""#$ -q free64""","""#$ -m as""","""#$ -ckpt restart""","""## -W 3:55""","""## -M 2"""],
 		'body': ["""sleep $(($SGE_TASK_ID % 60))""","""python misc/phyler_identify.py -r ${SGE_TASK_ID} -i PROJECT_HOME/read_partitions/ -o PROJECT_HOME/phyler/"""]},
 	'PhylerSummary': {
 		'outfile': """PhylerSummary_Job.sge""",
