@@ -92,7 +92,7 @@ sub check_for_paired_reads_and_print{
                 print PAIRS $fastqLines, "\n";
             }
         }else{
-            foreach my $read (keys $fastqPairs{$head}){
+            foreach my $read (keys %{ $fastqPairs{$head} }){
                 foreach my $fastqLines (@{ $fastqPairs{$head}{$read} }){
                     print SING $fastqLines, "\n";
                 }
