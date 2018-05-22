@@ -30,25 +30,43 @@ sub open_fastq_find_head{
             $line =~ /(@.+?):/;
             $header = $1;
         }
-        #print $line, "\n";
-        push(@fastq, $line);
+        if($line =~ /^.+($header).+$/){
+            #print $line, "\n";
+            my @line = split($header, $line);
+            for(my $i = 1; $i<@line; $i++){
+                $line[$i] = $header.$line[$i];
+            }
+            push(@fastq, @line);
+        }else{
+            push(@fastq, $line);
+        }
+    
     }
-    my $fastq = join("splitLinesHere", @fastq);
-    return(\$fastq, $header);
+    return(\@fastq, $header);
 }
 
 sub check_for_eq_seq_qual_len{
     my $fastqRef = $_[0];
     my @fastq = @$fastqRef;
     my $header = $_[1];
-    
     my %fastqPairs;
     my @sequenceOrder;
-    foreach my $seq (@fastq){
-        my @seq = split("splitLinesHere", $seq);
-        $seq[0] = $header.$seq[0];
-       
-        if(scalar(@seq) != 4){
+    
+    while(@fastq){
+        if($fastq[0] !~ /$header/){print "Please check the first line of fastq file to ensure that it is a header line\n"; exit;}
+        my @seq;
+        if(scalar(@fastq) < 4){print "Last entry $fastq[0] is nonstandard entry\n"; last;}
+        if(scalar(@fastq) == 4){
+            @seq = splice(@fastq, 0, 4);
+        }else{
+            for(my $i = 1; $i<5; $i++){
+                if($fastq[$i] =~ /^$header/){
+                    @seq = splice(@fastq, 0, $i);
+                    last;
+                }
+            }
+        }
+        if(scalar(@seq) < 4){
             print "$seq[0] does not have four elements. Skipping sequence...\n";
             next;
         }
@@ -56,16 +74,15 @@ sub check_for_eq_seq_qual_len{
             print "$seq[0] has unequal length quality and sequence lines. Skipping sequence...\n";
             next;
         }
-        
+
         $seq[0] =~ /($header.+)\s.+/;
         my $pairID = $1;
-            
         if(defined($sequenceOrder[0]) == 0){
             push(@sequenceOrder, $pairID);
         }else{
             if($sequenceOrder[-1] ne $pairID){
                 push(@sequenceOrder, $pairID);
-            }
+           }
         }
         $seq[0] =~ /$header.+\s(1|2):.+/;
         my $read = $1;
@@ -111,9 +128,7 @@ sub check_for_paired_reads_and_print{
     my $pairs = $ARGV[1];
     my $singles = $ARGV[2];
     my($fastqRef, $header) = open_fastq_find_head($in);
-    my @fastq = split($header, $$fastqRef);
-    shift @fastq;
+    my($fastqPairsRef, $sequenceOrderRef) = check_for_eq_seq_qual_len($fastqRef, $header);
     
-    my($fastqPairsRef, $sequenceOrderRef) = check_for_eq_seq_qual_len(\@fastq, $header);
     check_for_paired_reads_and_print($fastqPairsRef, $sequenceOrderRef, $pairs, $singles);
 }
