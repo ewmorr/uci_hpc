@@ -116,7 +116,6 @@ sub check_for_paired_reads_and_print{
             }
         }
     }
-    
 }
 
 #MAIN
