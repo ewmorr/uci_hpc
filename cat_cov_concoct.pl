@@ -56,7 +56,8 @@ sub print_cov{
                 if(defined($cov{$num}{$node}{$sample}) == 0){
                     print OUT 0, "\t";
                 }else{
-                    print OUT $cov{$num}{$node}{$sample}, "\t";
+                    my $val = sprintf("%.3f", $cov{$num}{$node}{$sample});
+                    print OUT $val, "\t";
                 }
             }
         }
