@@ -64,14 +64,11 @@ if __name__ == "__main__":
 	hashobject = Fastq_Reader(inputdir,outputdir)
 	cp = np.load(hashobject.output_path+'cluster_probs.npy')
 	cluster_probs = dict(enumerate(cp))
-	#list of files names
 	Hashq_Files = glob.glob(os.path.join(hashobject.input_path,'*.hashq.*'))
 	Hashq_Files = [fp for fp in Hashq_Files if '.tmp' not in fp]
 	Hashq_Files.sort()
-	#call hashq by TASK_ID
 	infile = Hashq_Files[fr]
-	#new code to copy hashq.gz to /scratch
-	#os.system('mkdir '+hashdir)
+	#new code to copy hashq.gz to /scratch EWM
 	hashdir += str(fr) + '/'
 	os.system('mkdir '+hashdir)
 	os.system('cp '+infile+' '+hashdir)
@@ -79,9 +76,6 @@ if __name__ == "__main__":
 	
 	outpart = infile[-6:-3]
 	sample_id = infile[infile.rfind('/')+1:infile.index('.hashq')]
-	#makes tmpdir by TASK_ID
-	#added initial mkdir to initialize dir on /scratch
-	#os.system('mkdir '+tmpdir)
 	tmpdir += str(fr) + '/'
 	os.system('mkdir '+tmpdir)
 	G = [open('%s%s.%s.cols.%d' % (tmpdir,sample_id,outpart,i),'w') for i in range(0,2**hashobject.hash_size,2**hashobject.hash_size/50)]
