@@ -92,6 +92,8 @@ if __name__ == "__main__":
 		g.close()
 	if R < 50:
 		print 'Fewer than 50 reads...doing nothing'
+        os.system('rm -rf '+tmpdir)
+        os.system('rm -rf '+hashdir)
 	else:
 		ClusterFile = open(hashobject.output_path+'cluster_cols.npy')
 		ValueFile = open(hashobject.output_path+'cluster_vals.npy')
