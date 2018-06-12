@@ -149,6 +149,8 @@ if __name__ == "__main__":
 		CF = {}
 		reads_written = 0
 		unique_reads_written = 0
+		
+		#The for loop processes each read individually until break at EOF; read is a[0]
 		for a in hashobject.hash_read_generator(f):
 			while id_vals[0] < r_id:
 				id_vals = np.fromstring(g.readline(),sep='\t')
@@ -166,7 +168,7 @@ if __name__ == "__main__":
 						EOF = True
 			if EOF:
 				break
-#The for loop processes each read individually until break at end of file
+			
 			D = defaultdict(float)
 			while id_vals[0] == r_id:
 				D[-1] += id_vals[1]
@@ -183,35 +185,58 @@ if __name__ == "__main__":
 			#if best_clust != None:
 			best_clusts = max_log_lik_ratio(D,cluster_probs)
 			for best_clust in best_clusts:
-				if best_clust not in CF:
-					#CF[best_clust] += a[0]+'\n'
-					try:
-						CF[best_clust] = open('%s%d/%s.fastq.%s' % (nodescratch,best_clust,sample_id,outpart),'a')
-					except:
-						os.system('mkdir %s%d/' % (nodescratch,best_clust))
-						CF[best_clust] = open('%s%d/%s.fastq.%s' % (nodescratch,best_clust,sample_id,outpart),'a')
-				CF[best_clust].write(a[0]+'\n')
+				#if best_clust not in CF: #if check here not necessary bc we won't perform multiple opens per cluster, just append values to astring then print
+				
+				#	try:
+				#		CF[best_clust] = open('%s%d/%s.fastq.%s' % (nodescratch,best_clust,sample_id,outpart),'a')
+				#	except:
+				#		os.system('mkdir %s%d/' % (nodescratch,best_clust))
+				#		CF[best_clust] = open('%s%d/%s.fastq.%s' % (nodescratch,best_clust,sample_id,outpart),'a')
+				try:
+					CF[best_clust] += a[0]+'\n'
+				except:
+					CF[best_clust] = a[0]+'\n'
+				#CF[best_clust].write(a[0]+'\n')
 				reads_written += 1
 			if len(best_clusts) > 0:
 				unique_reads_written += 1
-			if len(CF) > 200:
-				for cfv in CF.values():
-					cfv.close()
-				CF = {}
+			#if len(CF) > 200: #This loop looks like it closes files if the number open reaches more than 200; won't need this check; the new way will require more mem bc all reads are help in a single new object, but that should be fine...
+			#	for cfv in CF.values():
+			#		cfv.close()
+			#	CF = {}
 			r_id += 1
-		for f in CF.values():
-			f.close()
-		searchPaths = glob.glob(os.path.join(nodescratch, '*', '*.fastq.*'))
-		for f in searchPaths:
-			(head, tail) = os.path.split(f)
-			clust_dir = head.split(os.sep)[-1]
-			try:
-				os.system("mv "+f+" "+os.path.join(hashobject.output_path,clust_dir))
+		f.close()
+		#write files one by one
+		for cluster,seqs in CF.items():
+			try: #The try is probably mostly pointless bc on an uninitialized run the dirs should not be there...
+				os.system('mkdir %s%d/' % (nodescratch,cluster))
+				clustFile = open('%s%d/%s.fastq.%s' % (nodescratch,cluster,sample_id,outpart),'w')
+				clustFile.write(seqs)
+				clustFile.close()
 			except:
-				os.system('mkdir %s%d/' % (hashobject.output_path,clust_dir))
-				os.system('mv '+f+' '+os.path.join(hashobject.output_path,clust_dir))
-                          
-            
+				clustFile = open('%s%d/%s.fastq.%s' % (nodescratch,cluster,sample_id,outpart),'w')
+				clustFile.write(seqs)
+				clustFile.close()
+			clustFilePath = ('%s%d/%s.fastq.%s' % (nodescratch,cluster,sample_id,outpart))
+			outDir = os.path.join(hashobject.output_path, str(cluster))
+        		outDir += "/"
+			#Do moves within this loop instead of two spearate iterations
+			try:
+				os.system('mv '+clustFilePath+' '+outDir)
+			except:
+				os.system('mkdir '+outDir)
+				os.system('mv '+clustFilePath+' '+outDir)
+		
+		#move output files back to main disk from /scratch
+		#searchPaths = glob.glob(os.path.join(nodescratch, '*', '*.fastq.*'))
+		#for f in searchPaths:
+		#	(head, tail) = os.path.split(f)
+		#	clust_dir = head.split(os.sep)[-1]
+		#	try:
+		#		os.system("mv "+f+" "+os.path.join(hashobject.output_path,clust_dir))
+		#	except:
+		#		os.system('mkdir %s%d/' % (hashobject.output_path,clust_dir))
+		#		os.system('mv '+f+' '+os.path.join(hashobject.output_path,clust_dir))
 		os.system('rm -rf '+tmpdir)
 		os.system('rm -rf '+hashdir)
 		os.system('rm -rf '+nodescratch)
