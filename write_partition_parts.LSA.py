@@ -184,7 +184,7 @@ if __name__ == "__main__":
 			best_clusts = max_log_lik_ratio(D,cluster_probs)
 			for best_clust in best_clusts:
 				if best_clust not in CF:
-					CF[best_clust] += a[0]+'\n'
+					#CF[best_clust] += a[0]+'\n'
 					try:
 						CF[best_clust] = open('%s%d/%s.fastq.%s' % (nodescratch,best_clust,sample_id,outpart),'a')
 					except:
