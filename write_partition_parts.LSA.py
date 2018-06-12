@@ -32,10 +32,10 @@ def max_log_lik_ratio(s,bkg,h1_prob=0.8,thresh1=3.84,thresh2=np.inf):
 			break
 	return K
 
-help_message = 'usage example: python write_partition_parts.py -r 1 -i /project/home/hashed_reads/ -o /project/home/cluster_vectors/ -t /tmp/dir/ -s /tmp/hashdir/'
+help_message = 'usage example: python write_partition_parts.py -r 1 -i /project/home/hashed_reads/ -o /project/home/cluster_vectors/ -t /tmp/dir/ -s /tmp/hashdir/ -n /node/scratch/ Scratch dir -n should nicely point to /scratch/username on the UCI HPC so as to write to local compute node in a directory assigned to username. The subdir need not (cannot) already exist (unless one has hacked the compute node...). Tmp dirs (-t and -s) should kindly point to /fast-scratch/somedirs/ that already exist'
 if __name__ == "__main__":
 	try:
-		opts, args = getopt.getopt(sys.argv[1:],'hr:i:o:t:s:',["--filerank=","inputdir=","outputdir=","tmpdir=","hashdir="])
+        	opts, args = getopt.getopt(sys.argv[1:],'hr:i:o:t:s:n:',["--filerank=","inputdir=","outputdir=","tmpdir=","hashdir=","nodescratch="])
 	except:
 		print help_message
 		sys.exit(2)
@@ -61,6 +61,10 @@ if __name__ == "__main__":
 			hashdir = arg
 			if hashdir[-1] != '/':
 				hashdir += '/'
+        	elif opt in ('-n','--nodescratch'):
+			nodescratch = arg
+			if nodescratch[-1] == '/':
+				nodescratch = nodescratch[:-1]
 	hashobject = Fastq_Reader(inputdir,outputdir)
 	cp = np.load(hashobject.output_path+'cluster_probs.npy')
 	cluster_probs = dict(enumerate(cp))
@@ -68,12 +72,15 @@ if __name__ == "__main__":
 	Hashq_Files = [fp for fp in Hashq_Files if '.tmp' not in fp]
 	Hashq_Files.sort()
 	infile = Hashq_Files[fr]
-	#new code to copy hashq.gz to /scratch EWM
+	#new code to copy hashq.gz to /fast-scratch EWM
 	hashdir += str(fr) + '/'
 	os.system('mkdir '+hashdir)
 	os.system('cp '+infile+' '+hashdir)
 	infileScratch = os.path.join(hashdir,os.path.basename(infile))
-	
+	#Add path to node /scratch dir for writes EWM	
+	#will write files to one partition dir per original read file so these aren't colliding when trying to rm files at end of process
+	nodescratch += '_' + str(fr) + '/'
+	os.system("mkdir "+nodescratch)
 	outpart = infile[-6:-3]
 	sample_id = infile[infile.rfind('/')+1:infile.index('.hashq')]
 	tmpdir += str(fr) + '/'
@@ -92,8 +99,9 @@ if __name__ == "__main__":
 		g.close()
 	if R < 50:
 		print 'Fewer than 50 reads...doing nothing'
-        os.system('rm -rf '+tmpdir)
-        os.system('rm -rf '+hashdir)
+        	os.system('rm -rf '+tmpdir)
+        	os.system('rm -rf '+hashdir)
+		os.system('rm -rf '+nodescratch)
 	else:
 		ClusterFile = open(hashobject.output_path+'cluster_cols.npy')
 		ValueFile = open(hashobject.output_path+'cluster_vals.npy')
@@ -158,6 +166,7 @@ if __name__ == "__main__":
 						EOF = True
 			if EOF:
 				break
+#The for loop processes each read individually until break at end of file
 			D = defaultdict(float)
 			while id_vals[0] == r_id:
 				D[-1] += id_vals[1]
@@ -175,11 +184,12 @@ if __name__ == "__main__":
 			best_clusts = max_log_lik_ratio(D,cluster_probs)
 			for best_clust in best_clusts:
 				if best_clust not in CF:
+					CF[best_clust] += a[0]+'\n'
 					try:
-						CF[best_clust] = open('%s%d/%s.fastq.%s' % (hashobject.output_path,best_clust,sample_id,outpart),'a')
+						CF[best_clust] = open('%s%d/%s.fastq.%s' % (nodescratch,best_clust,sample_id,outpart),'a')
 					except:
-						os.system('mkdir %s%d/' % (hashobject.output_path,best_clust))
-						CF[best_clust] = open('%s%d/%s.fastq.%s' % (hashobject.output_path,best_clust,sample_id,outpart),'a')
+						os.system('mkdir %s%d/' % (nodescratch,best_clust))
+						CF[best_clust] = open('%s%d/%s.fastq.%s' % (nodescratch,best_clust,sample_id,outpart),'a')
 				CF[best_clust].write(a[0]+'\n')
 				reads_written += 1
 			if len(best_clusts) > 0:
@@ -191,8 +201,20 @@ if __name__ == "__main__":
 			r_id += 1
 		for f in CF.values():
 			f.close()
+		searchPaths = glob.glob(os.path.join(nodescratch, '*', '*.fastq.*'))
+		for f in searchPaths:
+			(head, tail) = os.path.split(f)
+			clust_dir = head.split(os.sep)[-1]
+			try:
+				os.system("mv "+f+" "+os.path.join(hashobject.output_path,clust_dir))
+			except:
+				os.system('mkdir %s%d/' % (hashobject.output_path,clust_dir))
+				os.system('mv '+f+' '+os.path.join(hashobject.output_path,clust_dir))
+                          
+            
 		os.system('rm -rf '+tmpdir)
 		os.system('rm -rf '+hashdir)
+		os.system('rm -rf '+nodescratch)
 		print 'total reads written:',reads_written
 		print 'unique reads written:',unique_reads_written
 		
