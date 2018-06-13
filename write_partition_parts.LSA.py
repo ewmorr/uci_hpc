@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#this is mod of script from Cleary et al. 2015 LSA pipeline
-### THIS MAY OCCUPY ~10-50GB OF /tmp SPACE PER JOB
+#this is mod of script from Cleary et al. 2015 LSA pipeline (EW Morrison 061318)
+### THIS MAY OCCUPY ~10-50GB OF /tmp SPACE PER JOB (Doesn't seem likely actually, more like a few Gb and 10Gb max -EWM)
 
 import glob,os
 import sys,getopt
@@ -77,8 +77,8 @@ if __name__ == "__main__":
 	os.system('mkdir '+hashdir)
 	os.system('cp '+infile+' '+hashdir)
 	infileScratch = os.path.join(hashdir,os.path.basename(infile))
-	#Add path to node /scratch dir for writes EWM	
-	#will write files to one partition dir per original read file so these aren't colliding when trying to rm files at end of process
+	#Add path to node local /scratch dir for writes EWM
+	#each job is writing to as many files as N paritions (with a large dataset this can be thousands), writing across cluster network read by read causes problems..
 	nodescratch += '_' + str(fr) + '/'
 	os.system("mkdir "+nodescratch)
 	outpart = infile[-6:-3]
@@ -181,32 +181,18 @@ if __name__ == "__main__":
 						id_vals = [-1]
 				except:
 					break
-			#best_clust = max_log_lik_ratio(D,cluster_probs)
-			#if best_clust != None:
 			best_clusts = max_log_lik_ratio(D,cluster_probs)
-			for best_clust in best_clusts:
-				#if best_clust not in CF: #if check here not necessary bc we won't perform multiple opens per cluster, just append values to astring then print
-				
-				#	try:
-				#		CF[best_clust] = open('%s%d/%s.fastq.%s' % (nodescratch,best_clust,sample_id,outpart),'a')
-				#	except:
-				#		os.system('mkdir %s%d/' % (nodescratch,best_clust))
-				#		CF[best_clust] = open('%s%d/%s.fastq.%s' % (nodescratch,best_clust,sample_id,outpart),'a')
+			for best_clust in best_clusts: #Append seqs to hash value instead of writing line by line EWM
 				try:
 					CF[best_clust] += a[0]+'\n'
 				except:
 					CF[best_clust] = a[0]+'\n'
-				#CF[best_clust].write(a[0]+'\n')
 				reads_written += 1
 			if len(best_clusts) > 0:
 				unique_reads_written += 1
-			#if len(CF) > 200: #This loop looks like it closes files if the number open reaches more than 200; won't need this check; the new way will require more mem bc all reads are help in a single new object, but that should be fine...
-			#	for cfv in CF.values():
-			#		cfv.close()
-			#	CF = {}
 			r_id += 1
 		f.close()
-		#write files one by one
+		#write files one by one and all data, in one write (should only be a few 10s of Kb), old way held open as many as 200 files from pop. of files == N partitions, and wrote seq. by seq. (yuck) EWM
 		for cluster,seqs in CF.items():
 			try: #The try is probably mostly pointless bc on an uninitialized run the dirs should not be there...
 				os.system('mkdir %s%d/' % (nodescratch,cluster))
@@ -218,25 +204,18 @@ if __name__ == "__main__":
 				clustFile.write(seqs)
 				clustFile.close()
 			clustFilePath = ('%s%d/%s.fastq.%s' % (nodescratch,cluster,sample_id,outpart))
-			outDir = os.path.join(hashobject.output_path, str(cluster))
-        		outDir += "/"
-			#Do moves within this loop instead of two spearate iterations
+			clustDir = os.path.dirname(clustFilePath)
+			fileName = os.path.basename(clustFilePath)
+			outDir = ('%s%d' % (hashobject.output_path, cluster))
+			outPath = os.path.join(outDir, fileName)
+			
 			try:
-				os.system('mv '+clustFilePath+' '+outDir)
+				os.system('mv '+clustFilePath+' '+outPath)
+				os.system('rmdir '+clustDir)
 			except:
 				os.system('mkdir '+outDir)
-				os.system('mv '+clustFilePath+' '+outDir)
-		
-		#move output files back to main disk from /scratch
-		#searchPaths = glob.glob(os.path.join(nodescratch, '*', '*.fastq.*'))
-		#for f in searchPaths:
-		#	(head, tail) = os.path.split(f)
-		#	clust_dir = head.split(os.sep)[-1]
-		#	try:
-		#		os.system("mv "+f+" "+os.path.join(hashobject.output_path,clust_dir))
-		#	except:
-		#		os.system('mkdir %s%d/' % (hashobject.output_path,clust_dir))
-		#		os.system('mv '+f+' '+os.path.join(hashobject.output_path,clust_dir))
+				os.system('mv '+clustFilePath+' '+outPath)
+				os.system('rmdir '+clustDir)	
 		os.system('rm -rf '+tmpdir)
 		os.system('rm -rf '+hashdir)
 		os.system('rm -rf '+nodescratch)
